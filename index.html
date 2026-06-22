@@ -473,6 +473,13 @@
         
         xhr.onload = function() {
             if (xhr.status === 200 || xhr.status === 0) {
+                // BGM：创建 Blob URL 赋值给 audio 元素，确保已缓存
+                if (asset.url === "bgm.mp3") {
+                    const blob = new Blob([xhr.response], { type: "audio/mpeg" });
+                    const url = URL.createObjectURL(blob);
+                    const audioEl = document.getElementById("bgm");
+                    if (audioEl) audioEl.src = url;
+                }
                 loaded++;
                 loadingText.innerText = `已同步 ${loaded}/${total} 项...`;
                 updateProgress();
