@@ -643,15 +643,6 @@ function glitchProgress(real) {
     }, rand(800, 1200));
 }
 
-// ===================== 异常01：悬浮小字 =====================
-function anomaly01_hoverHint(optionEl) {
-    const hint = document.createElement("span");
-    hint.style.cssText = "position:absolute;bottom:-16px;left:10px;font-size:9px;color:#cc0000;font-style:italic;pointer-events:none;white-space:nowrap;";
-    hint.innerText = "我就知道你会看这个。";
-    optionEl.appendChild(hint);
-    setTimeout(() => { hint.remove(); }, 1000);
-}
-
 // ===================== 异常02：预标记 =====================
 function anomaly02_preMark(optionEl) {
     // 通过 data 属性获取原始选项索引
@@ -669,22 +660,6 @@ function anomaly02_preMark(optionEl) {
     mark.innerText = "✔ 已选择";
     optionEl.appendChild(mark);
     setTimeout(() => { mark.remove(); }, 1500);
-}
-
-// ===================== 异常03：光标偏移 =====================
-function anomaly03_cursorDrift() {
-    const origX = window.mouseX || 0;
-    const origY = window.mouseY || 0;
-    const driftX = origX + (Math.random() - 0.5) * 30;
-    const driftY = origY + (Math.random() - 0.5) * 30;
-    showHoverHint("抱歉。我只是想帮你做选择。", driftX, driftY, 2500);
-    // 轻微移动光标（通过改变body cursor）
-    document.body.style.cursor = "none";
-    const fakeCursor = document.createElement("div");
-    fakeCursor.style.cssText = `position:fixed;left:${origX-5}px;top:${origY-5}px;width:10px;height:10px;border:1px solid #cc0000;border-radius:50%;pointer-events:none;z-index:99999;transition:all 0.3s;`;
-    document.body.appendChild(fakeCursor);
-    setTimeout(() => { fakeCursor.style.left = (driftX-5)+"px"; fakeCursor.style.top = (driftY-5)+"px"; }, 200);
-    setTimeout(() => { fakeCursor.remove(); document.body.style.cursor = "default"; }, 2000);
 }
 
 // ===================== 异常04：测试记录 =====================
@@ -782,6 +757,7 @@ function anomaly12_rejectCountdown(optionEl, qIdx, optIdx) {
     const msgs = ["你确定吗？", "你以前不会这么选。", "你忘记我了吗？"];
     if (count <= 3) {
         const msg = document.createElement("div");
+        msg.className = "popup-tip";
         msg.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:#cc0000;font-size:14px;z-index:99999;pointer-events:none;font-family:'Microsoft YaHei',sans-serif;text-align:center;";
         msg.innerText = msgs[count - 1];
         document.body.appendChild(msg);
@@ -898,15 +874,6 @@ function scheduleRandomAnomalies(renderedOptions) {
 
     const phase = current <= 9 ? 1 : current <= 19 ? 2 : 3;
     
-    // 异常01：悬浮小字（阶段1-2，概率30%）
-    if (phase <= 2 && Math.random() < 0.3 && renderedOptions.length > 0) {
-        const t = setTimeout(() => {
-            const target = renderedOptions[rand(0, renderedOptions.length-1)];
-            if (target && target.parentNode) anomaly01_hoverHint(target);
-        }, rand(2000, 6000));
-        anomalyTimers.push(t);
-    }
-
     // 异常02：预标记（阶段1，概率25%）
     if (phase === 1 && Math.random() < 0.25 && renderedOptions.length > 0) {
         const t = setTimeout(() => {
@@ -938,25 +905,6 @@ function scheduleRandomAnomalies(renderedOptions) {
     if (Math.random() < 0.2) {
         const t = setTimeout(() => { glitchTime(); }, rand(4000, 15000));
         anomalyTimers.push(t);
-    }
-
-    // 异常03：光标偏移（全阶段，概率15%，监听鼠标）
-    if (Math.random() < 0.15) {
-        const driftHandler = function(e) {
-            window.mouseX = e.clientX;
-            window.mouseY = e.clientY;
-        };
-        document.addEventListener('mousemove', driftHandler);
-        const t = setTimeout(() => {
-            document.removeEventListener('mousemove', driftHandler);
-            if (Math.random() < 0.5) anomaly03_cursorDrift();
-        }, rand(5000, 15000));
-        anomalyTimers.push(t);
-        // 也存当前鼠标位置
-        document.addEventListener('mousemove', function me(e) {
-            window.mouseX = e.clientX;
-            window.mouseY = e.clientY;
-        }, { once: false });
     }
 }
 
@@ -1012,6 +960,9 @@ function renderQuestion() {
             answers[current] = origIdx;
             document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
             div.classList.add('selected');
+            
+            // 清除上一次点击留下的弹出文字，防止重叠
+            document.querySelectorAll('.popup-tip').forEach(e => e.remove());
 
             // ===================== 异常05：无法选择拒绝（Q14，选D"逃离"） =====================
             if (current === 13 && origIdx === 3) {
@@ -1147,6 +1098,7 @@ function renderQuestion() {
                     if (!q28DunnoEffectDone) {
                         // 先弹出"你应当知道"
                         const tip = document.createElement("div");
+                        tip.className = "popup-tip";
                         tip.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:#cc0000;font-size:clamp(16px,3.5vw,24px);z-index:99999;pointer-events:none;font-family:'Microsoft YaHei',sans-serif;text-align:center;";
                         tip.innerText = "你应当知道";
                         document.body.appendChild(tip);
@@ -1231,6 +1183,7 @@ nextBtn.onclick = () => {
     if (replacedAnswers[current] && answers[current] === replacedAnswers[current].idx) {
         // 答案已被替换，显示提示
         const tip = document.createElement("div");
+        tip.className = "popup-tip";
         tip.style.cssText = "position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);color:#cc0000;font-size:12px;z-index:99999;pointer-events:none;text-align:center;";
         tip.innerText = "✔ 已选择";
         document.body.appendChild(tip);
