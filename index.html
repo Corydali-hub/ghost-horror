@@ -1006,12 +1006,14 @@ function renderQuestion() {
 
             // ===================== 异常05：无法选择拒绝（Q14，选D"逃离"） =====================
             if (current === 13 && origIdx === 3) {
+                answers[current] = null; // 不允许跳过
                 anomaly05_lockOption(div, item);
                 return;
             }
 
             // ===================== 异常10：强制修正（Q22选C"会"） =====================
             if (current === 21 && origIdx === 2) {
+                answers[current] = null; // 不允许跳过
                 anomaly10_forceCorrect(current, 0, () => {
                     answers[current] = 0;
                     renderQuestion();
@@ -1045,6 +1047,7 @@ function renderQuestion() {
             if (current === 19) {
                 // B"犹豫"
                 if (origIdx === 1) {
+                    answers[current] = null; // 不允许跳过
                     // 画面变红 + 黑色大字
                     const overlay = document.createElement("div");
                     overlay.style.cssText = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(180,0,0,0.75);z-index:99999;display:flex;align-items:center;justify-content:center;pointer-events:none;";
@@ -1063,6 +1066,7 @@ function renderQuestion() {
                 }
                 // C"拒绝" / D"阻止她"
                 if (origIdx === 2 || origIdx === 3) {
+                    answers[current] = null; // 不允许跳过
                     anomaly12_rejectCountdown(div, current, origIdx);
                     // 增大字体
                     div.style.fontSize = "clamp(16px,3vw,20px)";
@@ -1160,6 +1164,7 @@ function renderQuestion() {
                 }
                 // C"拒绝" → 拒绝倒计时
                 if (origIdx === 2) {
+                    answers[current] = null; // 不允许跳过
                     anomaly12_rejectCountdown(div, current, origIdx);
                     return;
                 }
