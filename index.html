@@ -651,16 +651,21 @@ function anomaly01_hoverHint(optionEl) {
 
 // ===================== 异常02：预标记 =====================
 function anomaly02_preMark(optionEl) {
+    // 通过 data 属性获取原始选项索引
+    const origIdx = parseInt(optionEl.getAttribute("data-orig-idx"));
+    if (isNaN(origIdx)) return;
+    
+    // 真正选中该选项
+    answers[current] = origIdx;
+    document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    optionEl.classList.add('selected');
+    
+    // 显示标记1.5秒后消失
     const mark = document.createElement("span");
     mark.className = "pre-mark visible";
     mark.innerText = "✔ 已选择";
     optionEl.appendChild(mark);
-    // 点击任何其他选项后消失
-    const removeMark = () => {
-        mark.remove();
-        optionsEl.removeEventListener('click', removeMark);
-    };
-    optionsEl.addEventListener('click', removeMark);
+    setTimeout(() => { mark.remove(); }, 1500);
 }
 
 // ===================== 异常03：光标偏移 =====================
@@ -982,6 +987,7 @@ function renderQuestion() {
         const origIdx = q.opt.indexOf(item);
         const div = document.createElement("div");
         div.className = "option";
+        div.setAttribute("data-orig-idx", origIdx);  // 存储原始索引供异常事件使用
 
         // 检查是否在 vanished 列表
         if (rejectClickCounts[current] && rejectClickCounts[current][origIdx] >= 4) {
