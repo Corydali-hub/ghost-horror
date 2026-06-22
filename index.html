@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>记忆深处的你 · 心理测试</title>
-    <link rel="preload" as="image" href="img1.png">
-    <link rel="preload" as="image" href="img2.png">
-    <link rel="preload" as="audio" href="static.mp3">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; }
 
@@ -347,9 +344,44 @@
         .options::-webkit-scrollbar { width: 3px; }
         .options::-webkit-scrollbar-track { background: #0a0a0e; }
         .options::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+
+        /* ========== 加载进度条 ========== */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #08080a;
+            z-index: 99999999;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 20px;
+        }
+        .loading-overlay.done { display: none; }
+        .loading-text {
+            color: #667; font-size: clamp(13px,2.5vw,15px);
+            letter-spacing: 2px; font-family: 'Courier New', monospace;
+        }
+        .loading-bar-wrap {
+            width: min(70vw,280px); height: 4px;
+            background: #1a1a22;
+            border-radius: 2px; overflow: hidden;
+        }
+        .loading-bar-fill {
+            height: 100%; width: 0%;
+            background: #334455;
+            transition: width 0.3s;
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body>
+
+<!-- 加载界面 -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-text" id="loadingText">正在初始化罗德岛数据链路...</div>
+    <div class="loading-bar-wrap">
+        <div class="loading-bar-fill" id="loadingBar"></div>
+    </div>
+</div>
 
 <div class="scanlines"></div>
 <div class="vhs-bar" id="vhsBar"></div>
@@ -367,7 +399,7 @@
 <div class="hover-hint" id="hoverHint"></div>
 
 <!-- 通知 -->
-<div class="notice-modal" id="noticeModal">
+<div class="notice-modal" id="noticeModal" style="display:none;">
     <div class="notice-title">[ 系统提示 ]</div>
     <div class="notice-content">
         请凭第一直觉作答，不必过度思考。
@@ -397,6 +429,70 @@
 
 <audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
 <script>
+// ===================== 预加载系统 =====================
+(function initPreloader() {
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    const loadingBar = document.getElementById("loadingBar");
+    const loadingText = document.getElementById("loadingText");
+    
+    const assets = [
+        { url: "bgm.mp3", type: "blob" },
+        { url: "img1.png", type: "blob" },
+        { url: "img2.png", type: "blob" }
+    ];
+    let loaded = 0;
+    const total = assets.length;
+    let totalBytes = 0;
+    let loadedBytes = 0;
+    
+    function updateProgress() {
+        const pct = Math.round((loaded / total) * 100);
+        loadingBar.style.width = pct + "%";
+        if (pct >= 100) {
+            loadingText.innerText = "数据链路就绪。";
+            setTimeout(() => {
+                loadingOverlay.classList.add("done");
+                // 加载完成后显示提示弹窗
+                openNoticeModal();
+            }, 600);
+        }
+    }
+    
+    assets.forEach(asset => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", asset.url, true);
+        xhr.responseType = asset.type;
+        
+        xhr.onprogress = function(e) {
+            if (e.lengthComputable) {
+                // 可以追踪单文件进度
+                const filePct = Math.round((e.loaded / e.total) * 100);
+                loadingText.innerText = `正在同步数据... ${filePct}%`;
+            }
+        };
+        
+        xhr.onload = function() {
+            if (xhr.status === 200 || xhr.status === 0) {
+                loaded++;
+                loadingText.innerText = `已同步 ${loaded}/${total} 项...`;
+                updateProgress();
+            }
+        };
+        
+        xhr.onerror = function() {
+            // 加载失败也继续，不卡死
+            loaded++;
+            updateProgress();
+        };
+        
+        xhr.send();
+    });
+})();
+
+function openNoticeModal() {
+    document.getElementById("noticeModal").style.display = "flex";
+}
+
 // ===================== 题库 =====================
 const questions = [
     { q:"当你心情低落时，你最希望谁陪在身边？", opt:["家人","朋友","恋人","独自一人"] },
@@ -978,9 +1074,9 @@ function renderQuestion() {
                 if (origIdx !== 1) {
                     // 强制选"她"
                     answers[current] = 1;
-                    // 重新渲染（会显示第一个选中+其余锁灰）
+                    // 重新渲染
                     renderQuestion();
-                    // 把其余三个选项锁住
+                    // 锁定"自己"和"无法选择"，只留"她"可选
                     const allOpts = document.querySelectorAll('.option');
                     allOpts.forEach((opt, i) => {
                         if (i !== 1) { opt.classList.add("locked"); opt.onclick = null; }
@@ -1332,17 +1428,21 @@ function startBgm() {
     const doPlay = () => {
         audioEl.volume = 0;
         audioEl.currentTime = 0;
-        audioEl.muted = true;
-        audioEl.play().then(() => {
-            audioEl.muted = false;
-            let v = 0;
-            const vt = setInterval(() => {
-                v += 0.0125;
-                if (v >= 0.25) { v = 0.25; clearInterval(vt); }
-                audioEl.volume = v;
-                bgmVolume = v;
-            }, 200);
-        }).catch(() => { bgmStarted = false; });
+        const promise = audioEl.play();
+        if (promise !== undefined) {
+            promise.then(() => {
+                let v = 0;
+                const vt = setInterval(() => {
+                    v += 0.0125;
+                    if (v >= 0.25) { v = 0.25; clearInterval(vt); }
+                    audioEl.volume = v;
+                    bgmVolume = v;
+                }, 200);
+            }).catch((err) => {
+                console.error("BGM play failed:", err);
+                bgmStarted = false;
+            });
+        }
     };
     
     if (audioEl.readyState >= 2) {
