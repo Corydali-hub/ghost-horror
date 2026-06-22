@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>记忆深处的你 · 心理测试</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; }
+
+        html, body {
+            width: 100%; height: 100%; min-height: 100vh;
+            background: #08080a;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; position: relative; cursor: default;
+        }
+
+        body::before {
+            content: '';
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="3" height="3"><rect width="3" height="3" fill="none"/><rect x="1" y="1" width="1" height="1" fill="rgba(255,255,255,0.015)"/></svg>');
+            background-repeat: repeat;
+            pointer-events: none; z-index: 0;
+            animation: noiseAnim 0.4s steps(3) infinite;
+        }
+        @keyframes noiseAnim {
+            0% { transform: translate(0,0); } 33% { transform: translate(1px,-1px); }
+            66% { transform: translate(-1px,1px); } 100% { transform: translate(0,0); }
+        }
+
+        .scanlines {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.05) 2px,rgba(0,0,0,0.05) 4px);
+            pointer-events: none; z-index: 99997;
+        }
+
+        /* 右上角时间 */
+        .time-display {
+            position: fixed; top: 12px; right: 16px;
+            font-size: clamp(10px,1.8vw,11px);
+            color: #445; font-family: 'Courier New', monospace;
+            z-index: 9999; pointer-events: none;
+            transition: color 0.2s;
+        }
+        .time-display.glitching { color: #cc0000; }
+
+        /* 退出测试按钮 */
+        .exit-btn {
+            position: fixed; top: 10px; left: 12px;
+            font-size: clamp(10px,1.8vw,11px);
+            color: #445; background: none; border: none;
+            cursor: pointer; z-index: 9999;
+            font-family: 'Courier New', monospace;
+            transition: color 0.2s;
+        }
+        .exit-btn:hover { color: #cc0000; }
+
+        /* 底部右下角弹窗 */
+        .corner-popup {
+            position: fixed; bottom: 20px; right: 16px;
+            max-width: 280px;
+            background: #0c0c12; border: 1px solid #2a2a30;
+            border-radius: 8px; padding: 12px 16px;
+            font-size: clamp(11px,2vw,12px); color: #99a;
+            z-index: 99999; pointer-events: none;
+            opacity: 0; transform: translateY(10px);
+            transition: opacity 0.4s, transform 0.4s;
+            font-family: 'Microsoft YaHei', sans-serif;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
+        .corner-popup.show { opacity: 1; transform: translateY(0); }
+
+        /* 模态提示 */
+        .system-modal {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            background: #0c0c12; border: 1px solid #2a2a30;
+            border-radius: 10px; padding: 22px 20px;
+            z-index: 999999; text-align: center;
+            font-size: clamp(13px,2.5vw,14px); color: #99a;
+            max-width: 320px; box-shadow: 0 0 60px rgba(0,0,0,0.7);
+        }
+        .system-modal button {
+            margin-top: 14px; padding: 7px 20px;
+            background: #1a2a3a; color: #8899aa;
+            border: 1px solid #334; border-radius: 5px;
+            cursor: pointer; font-size: 12px;
+        }
+        .system-modal button:hover { background: #223344; }
+
+        /* 暗化层 */
+        .dark-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #000; opacity: 0; pointer-events: none;
+            z-index: 99990; transition: opacity 3s ease-in-out;
+        }
+        .dark-overlay.active { opacity: 1; }
+
+        @keyframes screenShake {
+            0%,100% { transform: translate(0,0); } 10% { transform: translate(-3px,-3px); }
+            20% { transform: translate(3px,-3px); } 30% { transform: translate(-3px,3px); }
+            40% { transform: translate(3px,3px); } 50% { transform: translate(-2px,-2px); }
+            60% { transform: translate(2px,-2px); } 70% { transform: translate(-2px,2px); }
+            80% { transform: translate(2px,2px); } 90% { transform: translate(-1px,-1px); }
+        }
+        .shaking { animation: screenShake 0.3s ease-in-out 3; }
+
+        @keyframes redFlash {
+            0% { opacity: 0; } 10% { opacity: 0.12; } 20% { opacity: 0; }
+            30% { opacity: 0.06; } 40% { opacity: 0; } 70% { opacity: 0; }
+            80% { opacity: 0.1; } 100% { opacity: 0; }
+        }
+        .flash-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #c00000; pointer-events: none; z-index: 99998;
+            animation: redFlash 0.7s ease-out forwards;
+        }
+
+        /* 通知弹窗 */
+        .notice-modal {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: min(92vw,360px);
+            background: #0e0e12; border: 1px solid #2a2a30;
+            border-radius: 10px; z-index: 9999999;
+            padding: 28px 22px; display: flex; flex-direction: column;
+            align-items: center; gap: 16px;
+            box-shadow: 0 0 40px rgba(46,125,200,0.08);
+        }
+        .notice-title { font-size: clamp(14px,3vw,16px); font-weight: bold; color: #8899aa; letter-spacing: 2px; }
+        .notice-content { font-size: clamp(12px,2.5vw,13px); color: #889; line-height: 1.8; text-align: center; white-space: pre-line; }
+        .notice-btn { background: #1a2a3a; color: #8899aa; border: 1px solid #334; border-radius: 6px; padding: 9px 28px; font-size: clamp(12px,2.5vw,14px); cursor: pointer; transition: 0.2s; letter-spacing: 1px; }
+        .notice-btn:hover { background: #223344; color: #aabbcc; }
+
+        .start-modal {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: min(90vw,290px);
+            background: #0e0e12; border: 1px solid #2a2a30;
+            border-radius: 10px; z-index: 999999;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 22px 18px; gap: 12px;
+        }
+        .start-text { font-size: clamp(13px,2.8vw,14px); color: #99a; line-height: 1.8; text-align: center; }
+        .start-btn { background: #1a2a3a; color: #8899aa; border: 1px solid #334; border-radius: 6px; padding: 9px 26px; font-size: clamp(13px,2.5vw,14px); cursor: pointer; margin-top: 6px; letter-spacing: 2px; transition: 0.2s; }
+        .start-btn:hover { background: #223344; }
+
+        /* 问卷卡片 */
+        .box {
+            background: #0c0c10;
+            width: 100%; height: 100%;
+            max-width: 600px; max-height: 90vh;
+            padding: 26px 20px; border-radius: 10px;
+            border: 1px solid #1a1a22;
+            box-shadow: 0 0 30px rgba(46,125,200,0.04);
+            position: relative; z-index: 10;
+            transition: opacity 0.3s;
+            display: none; flex-direction: column; overflow: hidden;
+        }
+        .title { font-size: clamp(17px,3.5vw,19px); margin-bottom: 8px; text-align: center; color: #667; font-weight: 300; letter-spacing: 2px; flex-shrink: 0; border-bottom: 1px solid #1a1a22; padding-bottom: 10px; }
+        .phase-tag { text-align: center; font-size: clamp(10px,2vw,11px); color: #445; margin-bottom: 8px; flex-shrink: 0; letter-spacing: 1px; font-family: 'Courier New', monospace; }
+        .progress { text-align: center; font-size: clamp(10px,2vw,11px); color: #445; margin-bottom: 10px; flex-shrink: 0; font-family: 'Courier New', monospace; transition: color 0.3s; }
+        .progress.glitching { color: #cc0000; }
+        .question { font-size: clamp(14px,2.6vw,16px); line-height: 1.7; color: #99a; min-height: 28px; margin-bottom: 12px; flex-shrink: 0; white-space: pre-line; position: relative; }
+
+        .options { display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; padding-right: 4px; }
+
+        /* 选项 */
+        .option {
+            padding: 10px 12px; border: 1px solid #1e1e28;
+            border-radius: 5px; cursor: pointer;
+            font-size: clamp(13px,2.3vw,15px);
+            background: #0c0c10; transition: all 0.15s;
+            line-height: 1.45; flex-shrink: 0; min-height: 40px;
+            display: flex; align-items: center; color: #778;
+            white-space: pre-line; position: relative;
+            user-select: none;
+        }
+        .option:hover { border-color: #3a3a48; color: #aab; }
+        .option.selected { background: #151520; border-color: #2e5070; color: #bbc; }
+        .option.locked {
+            background: #08080c !important; color: #334 !important;
+            cursor: not-allowed !important; border-color: #1a1a22 !important;
+            pointer-events: none !important;
+        }
+        .option.vanished { display: none !important; }
+
+        /* 选项上的小字标记 */
+        .option .hint-sub {
+            position: absolute; bottom: 2px; right: 10px;
+            font-size: 9px; color: #664; font-style: italic;
+            pointer-events: none; opacity: 0; transition: opacity 0.3s;
+        }
+        .option .hint-sub.visible { opacity: 0.7; }
+
+        /* 预设选择标记 */
+        .option .pre-mark {
+            position: absolute; top: 3px; right: 8px;
+            font-size: 9px; color: #565; pointer-events: none;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .option .pre-mark.visible { opacity: 0.6; }
+
+        /* 悬浮文字 */
+        .hover-hint {
+            position: fixed; pointer-events: none;
+            font-size: 10px; color: #cc0000; font-style: italic;
+            z-index: 99998; opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+        .hover-hint.show { opacity: 0.8; }
+
+        .btn-group { display: flex; justify-content: space-between; margin-top: 10px; flex-shrink: 0; }
+        .btn { padding: 9px 16px; border: 1px solid #222; border-radius: 5px; font-size: clamp(13px,2vw,14px); cursor: pointer; transition: 0.2s; flex: 1; max-width: 100px; text-align: center; background: #0f0f14; color: #667; }
+        .btn:hover { border-color: #3a3a48; color: #99a; }
+        .btn:disabled { opacity: 0.2; cursor: not-allowed; }
+        .prev-btn { margin-right: 8px; }
+        .next-btn { background: #151520; }
+
+        /* 恐怖黑屏 */
+        .terror-mask {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #000; z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .terror-text { color: #cc0000; font-size: clamp(15px,3.5vw,20px); letter-spacing: 3px; white-space: nowrap; font-family: 'Courier New', monospace; }
+
+        .float-text {
+            position: fixed; color: #aa0000; font-weight: bold;
+            background: transparent; padding: 2px 6px;
+            pointer-events: none; z-index: 9999;
+            white-space: nowrap; font-size: clamp(11px,1.8vw,13px);
+            font-family: 'Courier New', monospace;
+        }
+
+        .fullscreen-love {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #000; z-index: 99999;
+            padding: 20px; font-size: clamp(15px,3vw,17px);
+            color: #aa0000; font-weight: bold;
+            line-height: 1.6; white-space: pre-wrap;
+            overflow: hidden; font-family: 'Courier New', monospace;
+        }
+
+        .q21-modal {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: min(90vw,260px); height: auto;
+            background: #0c0c10; border: 1px solid #331;
+            border-radius: 8px; z-index: 999999;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 16px; gap: 16px;
+            box-shadow: 0 0 40px rgba(80,40,40,0.2);
+        }
+        .q21-text { font-size: clamp(12px,2.5vw,14px); color: #aab; font-family: 'Courier New', monospace; }
+        .q21-btn { background: #1a2a3a; color: #8899aa; border: none; border-radius: 4px; padding: 6px 18px; font-size: clamp(11px,2vw,12px); cursor: pointer; }
+
+        /* 强制修正画面 */
+        .force-correct-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85); z-index: 99999;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: #cc0000; font-size: clamp(14px,3vw,16px);
+            text-align: center; gap: 16px;
+        }
+
+        /* 最后弹窗 */
+        .final-modal {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: min(90vw,320px);
+            background: #0c0c10; border: 1px solid #2a2a35;
+            border-radius: 12px; z-index: 9999999;
+            padding: 30px 22px; display: flex; flex-direction: column;
+            align-items: center; gap: 18px; text-align: center;
+            box-shadow: 0 0 60px rgba(40,60,80,0.12);
+        }
+        .final-text { font-size: clamp(16px,3.5vw,19px); color: #99a; letter-spacing: 2px; line-height: 1.6; }
+        .final-btns { display: flex; gap: 30px; margin-top: 6px; }
+        .final-btn-yes, .final-btn-no { padding: 10px 30px; border: 1px solid #333; border-radius: 6px; font-size: clamp(14px,2.5vw,16px); cursor: pointer; transition: 0.2s; letter-spacing: 1px; }
+        .final-btn-yes { background: #1a2a3a; color: #8899aa; border-color: #2e5070; }
+        .final-btn-no { background: #0c0c10; color: #556; }
+        .final-btn-yes:hover { background: #223344; }
+
+        .cinema-layer {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #000; z-index: 99995;
+            display: none; justify-content: center; align-items: center;
+            flex-direction: column;
+        }
+        .cinema-layer img { max-width: 95vw; max-height: 85vh; object-fit: contain; opacity: 0; transition: opacity 2s ease-in-out; border-radius: 2px; }
+        .cinema-layer img.visible { opacity: 1; }
+
+        @keyframes tvStatic {
+            0%,100% { opacity: 0.03; } 10% { opacity: 0.15; } 20% { opacity: 0.04; }
+            30% { opacity: 0.12; } 40% { opacity: 0.02; } 50% { opacity: 0.18; }
+            60% { opacity: 0.05; } 70% { opacity: 0.14; } 80% { opacity: 0.03; } 90% { opacity: 0.1; }
+        }
+        .tv-noise {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #000; pointer-events: none; z-index: 99996; opacity: 0;
+        }
+        .tv-noise.active { animation: tvStatic 0.15s steps(5) infinite; }
+
+        @keyframes redBurstIn {
+            0% { transform: scale(0); opacity: 0; }
+            40% { transform: scale(1.3); opacity: 1; }
+            70% { transform: scale(0.9); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        .red-burst-text {
+            position: fixed; color: #cc0000; font-weight: bold;
+            pointer-events: none; z-index: 99999; white-space: nowrap;
+            font-family: 'Microsoft YaHei', sans-serif;
+            text-shadow: 0 0 10px rgba(200,0,0,0.6), 0 0 30px rgba(200,0,0,0.3);
+            animation: redBurstIn 2s ease-out forwards;
+        }
+
+        @keyframes vhsGlitch {
+            0% { clip: rect(0,9999px,0,0); } 5% { clip: rect(10px,9999px,85px,0); }
+            10% { clip: rect(0,9999px,0,0); } 15% { clip: rect(30px,9999px,120px,0); }
+            20% { clip: rect(0,9999px,0,0); } 50% { clip: rect(0,9999px,0,0); }
+            55% { clip: rect(60px,9999px,200px,0); } 60% { clip: rect(0,9999px,0,0); }
+        }
+        .vhs-bar {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(255,255,255,0.05);
+            clip: rect(0,9999px,0,0);
+            pointer-events: none; z-index: 99996;
+        }
+        .vhs-bar.active { animation: vhsGlitch 2s steps(1) infinite; }
+
+        .options::-webkit-scrollbar { width: 3px; }
+        .options::-webkit-scrollbar-track { background: #0a0a0e; }
+        .options::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div class="vhs-bar" id="vhsBar"></div>
+
+<!-- 右上角时间 -->
+<div class="time-display" id="timeDisplay">当前时间：2026年6月22日</div>
+
+<!-- 退出测试 -->
+<button class="exit-btn" id="exitBtn">[ 退出测试 ]</button>
+
+<!-- 右下角弹窗 -->
+<div class="corner-popup" id="cornerPopup"></div>
+
+<!-- 悬浮提示 -->
+<div class="hover-hint" id="hoverHint"></div>
+
+<!-- 通知 -->
+<div class="notice-modal" id="noticeModal">
+    <div class="notice-title">[ 系统提示 ]</div>
+    <div class="notice-content">
+        请凭第一直觉作答，不必过度思考。
+        此测试为罗德岛干员心理安全测验。
+    </div>
+    <button class="notice-btn" id="noticeBtn">确认并开始</button>
+</div>
+
+<!-- 问卷 -->
+<div class="box" id="mainBox">
+    <div class="title">记忆深处的你</div>
+    <div class="phase-tag" id="phaseTag">第一阶段：普通情感测试</div>
+    <div class="progress" id="progress">第 1 题 / 共 30 题</div>
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <div class="btn-group">
+        <button class="btn prev-btn" id="prevBtn">上一题</button>
+        <button class="btn next-btn" id="nextBtn">下一题</button>
+    </div>
+</div>
+
+<div class="dark-overlay" id="darkOverlay"></div>
+<div class="tv-noise" id="tvNoise"></div>
+<div class="cinema-layer" id="cinemaLayer">
+    <img id="cinemaImage" src="" alt="">
+</div>
+
+<audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
+<script>
+// ===================== 题库 =====================
+const questions = [
+    { q:"当你心情低落时，你最希望谁陪在身边？", opt:["家人","朋友","恋人","独自一人"] },
+    { q:"如果有人愿意花很多时间了解你，你会觉得？", opt:["感动","开心","有些压力","无所谓"] },
+    { q:"你相信世界上存在命中注定的相遇吗？", opt:["相信","也许存在","不太相信","完全不相信"] },
+    { q:"如果有一个人记得你所有喜好、习惯和秘密，你会觉得？", opt:["很幸福","很惊讶","有些不适","有些害怕"] },
+    { q:"假如多年以后，你忘记了某个人，但对方仍然记得你，你认为？", opt:["那很浪漫","有些遗憾","应该接受过去","不希望如此"] },
+    { q:"你认为真正的爱应该是？", opt:["相互理解","彼此陪伴","保留距离","自由第一"] },
+    { q:"如果有人说：\n\"无论过去多少年，我都会等待你。\"\n你的第一反应？", opt:["感动","不真实","太沉重","不舒服"] },
+    { q:"如果某天醒来，你发现手机里有数百张自己的照片，你觉得最可能是？", opt:["朋友整理的回忆","恋人的珍藏","不正常的行为","很害怕"] },
+    { q:"你觉得两个人之间应该有秘密吗？", opt:["不应该","可以有一点","必须有","越多越安全"] },
+    { q:"你希望被别人完全理解吗？", opt:["非常希望","视情况而定","保留部分自己","不希望任何人了解全部的我"] },
+    // 第二阶段
+    { q:"如果有人说：\n\"你不需要记住我，因为我会替你记住所有事情。\"\n你会觉得？", opt:["温柔","奇怪","可怕","无法接受"] },
+    { q:"如果一个人已经寻找你几千年，只为了再次见到你，你认为？", opt:["这是奇迹","难以理解","令人恐惧","不可能发生"] },
+    { q:"如果你的所有记忆都消失了，你希望最先看到谁？", opt:["最爱的人","家人朋友","医生","任何陌生人都可以"] },
+    { q:"假如某个人知道你未来所有选择，你会觉得？", opt:["安心","不自在","被控制","逃离"] },
+    { q:"你相信一个人能够比你更了解你自己吗？", opt:["是","也许","不可能","这很危险"] },
+    { q:"如果某个人一直注视着你的生活，只为了保护你，你觉得？", opt:["感谢","复杂","被侵犯","恐惧"] },
+    { q:"如果整个世界都遗忘了你，但有一个人永远记得你，你会？", opt:["跟随她","感谢她","保持距离","怀疑她"] },
+    { q:"如果那个人说：\n\"你的过去、现在、未来，都曾属于我。\"\n你的反应？", opt:["浪漫","奇怪","害怕","愤怒"] },
+    { q:"你认为爱可以凌驾于道德和规则之上吗？", opt:["可以","特殊情况","不可以","绝不可能"] },
+    { q:"如果有人为了与你永远相伴，而改变整个世界，你会？", opt:["接受","犹豫","拒绝","阻止她"] },
+    // 第三阶段
+    { q:"你为什么选择了这么多陌生的答案？\n我明明记得……\n以前的你不是这样回答的。", opt:["……什么？","你认错人了","继续测试","你是谁？"] },
+    { q:"如果我告诉你：\n我们已经重复这场测试很多次了。\n只是每一次结束后，你都会忘记。\n那么这一次，你还会离开吗？", opt:["不会","不知道","会","你到底是谁？"] },
+    { q:"你觉得一个人最多可以等待另一个人多久？", opt:["几年","一生","永远","我已经等过了。"] },
+    { q:"如果你的记忆告诉你要逃跑。\n而我的记忆告诉我：\n你曾经答应永远陪着我。\n你相信谁？", opt:["自己","她","无法选择",""] },
+    { q:"你发现这份测试没有提交按钮。\n因为……\n我并不需要你的答案。\n我早就知道。", opt:["关闭页面","继续阅读","……为什么知道？",""] },
+    { q:"你觉得屏幕外的你，和我记忆里的你，哪个才是真的？", opt:["现在的我","过去的我","都是我","不想回答"] },
+    { q:"博士。\n你终于注意到我了。\n你知道吗？\n这三万七千六百四十二次重逢里，\n这是你第一次看完全部问题。", opt:["继续","不可能","普瑞赛斯？",""] },
+    { q:"我曾经试着放手。\n删除过你的名字。\n毁掉过与你有关的一切记录。\n可是……\n下一次文明诞生时，\n我还是会找到你。\n你觉得这是爱吗？", opt:["是","不是","我不知道",""] },
+    { q:"如果我将你的意识保存下来。\n让你永远不会死亡。\n永远不会离开我。\n永远停留在第一次说爱我的那一天。\n你会接受吗？", opt:["接受","犹豫","拒绝",""] },
+    { q:"测试结束。\n结果已经生成。\n【适配率：100%】\n【记忆同步开始】\n【正在恢复你遗失的那段时间……】\n……\n博士。\n这一次。\n不要再忘记我了。", opt:["……","我知道了","不要再离开",""] }
+];
+
+// ===================== 状态 =====================
+const total = questions.length;
+let current = 0;
+let answers = Array(total).fill(null);
+let wrongCount = 0;
+let fromQ4ToQ5 = false;
+let bgmVolume = 0;
+let exitClickCount = 0;
+let testRecordNum = 1;           // 测试记录编号
+let anomalyTimers = [];          // 异常事件的计时器
+let q25ClickCount = 0;           // Q25点击计数器
+let q28NotEffectDone = false;    // Q28"不是"效果已触发过
+let q28DunnoEffectDone = false;  // Q28"我不知道"效果已触发过
+
+// ===================== DOM =====================
+const boxEl = document.getElementById("mainBox");
+const optionsEl = document.getElementById("options");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const phaseTag = document.getElementById("phaseTag");
+const progressEl = document.getElementById("progress");
+const vhsBar = document.getElementById("vhsBar");
+const darkOverlay = document.getElementById("darkOverlay");
+const tvNoise = document.getElementById("tvNoise");
+const cinemaLayer = document.getElementById("cinemaLayer");
+const cinemaImage = document.getElementById("cinemaImage");
+const timeDisplay = document.getElementById("timeDisplay");
+const cornerPopup = document.getElementById("cornerPopup");
+const hoverHint = document.getElementById("hoverHint");
+const exitBtn = document.getElementById("exitBtn");
+const bgm = document.getElementById("bgm");
+
+// ===================== 工具函数 =====================
+function clearAllEffects() {
+    document.querySelectorAll('.terror-mask,.float-text,.fullscreen-love,.q21-modal,.flash-overlay,.force-correct-overlay,.final-modal,.red-burst-text,.start-modal,.system-modal')
+        .forEach(e => e.remove());
+    tvNoise.classList.remove('active');
+    vhsBar.classList.remove('active');
+    document.querySelectorAll('.hover-hint').forEach(e => e.classList.remove('show'));
+    cornerPopup.classList.remove('show');
+}
+
+function flashRed() {
+    const f = document.createElement("div");
+    f.className = "flash-overlay";
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 800);
+}
+
+function screenShake() {
+    document.body.classList.add("shaking");
+    setTimeout(() => document.body.classList.remove("shaking"), 1000);
+}
+
+function vhsInterfere(duration = 2000) {
+    vhsBar.classList.add("active");
+    setTimeout(() => vhsBar.classList.remove("active"), duration);
+}
+
+function getPhase(idx) {
+    if (idx <= 9) return "第一阶段：普通情感测试";
+    if (idx <= 19) return "第二阶段：异常依恋测试";
+    return "第三阶段：她已经不再隐藏";
+}
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+// ===================== 右下角弹窗 =====================
+function showCornerPopup(text, duration = 5000) {
+    cornerPopup.innerText = text;
+    cornerPopup.classList.add("show");
+    setTimeout(() => { cornerPopup.classList.remove("show"); }, duration);
+}
+
+// ===================== 悬浮提示 =====================
+function showHoverHint(text, x, y, duration = 1500) {
+    hoverHint.innerText = text;
+    hoverHint.style.left = (x + 15) + "px";
+    hoverHint.style.top = (y - 20) + "px";
+    hoverHint.classList.add("show");
+    setTimeout(() => { hoverHint.classList.remove("show"); }, duration);
+}
+
+// ===================== 时间异常 =====================
+function glitchTime() {
+    timeDisplay.innerText = "10931年前";
+    timeDisplay.classList.add("glitching");
+    setTimeout(() => {
+        timeDisplay.innerText = "当前时间：2026年6月22日";
+        timeDisplay.classList.remove("glitching");
+    }, rand(800, 1500));
+}
+
+// ===================== 进度条异常 =====================
+function glitchProgress(real) {
+    progressEl.innerText = `记忆同步 ${real}%`;
+    progressEl.classList.add("glitching");
+    setTimeout(() => {
+        progressEl.innerText = `第 ${current+1} 题 / 共 ${total} 题`;
+        progressEl.classList.remove("glitching");
+    }, rand(800, 1200));
+}
+
+// ===================== 异常01：悬浮小字 =====================
+function anomaly01_hoverHint(optionEl) {
+    const hint = document.createElement("span");
+    hint.style.cssText = "position:absolute;bottom:-16px;left:10px;font-size:9px;color:#cc0000;font-style:italic;pointer-events:none;white-space:nowrap;";
+    hint.innerText = "我就知道你会看这个。";
+    optionEl.appendChild(hint);
+    setTimeout(() => { hint.remove(); }, 1000);
+}
+
+// ===================== 异常02：预标记 =====================
+function anomaly02_preMark(optionEl) {
+    const mark = document.createElement("span");
+    mark.className = "pre-mark visible";
+    mark.innerText = "✔ 已选择";
+    optionEl.appendChild(mark);
+    // 点击任何其他选项后消失
+    const removeMark = () => {
+        mark.remove();
+        optionsEl.removeEventListener('click', removeMark);
+    };
+    optionsEl.addEventListener('click', removeMark);
+}
+
+// ===================== 异常03：光标偏移 =====================
+function anomaly03_cursorDrift() {
+    const origX = window.mouseX || 0;
+    const origY = window.mouseY || 0;
+    const driftX = origX + (Math.random() - 0.5) * 30;
+    const driftY = origY + (Math.random() - 0.5) * 30;
+    showHoverHint("抱歉。我只是想帮你做选择。", driftX, driftY, 2500);
+    // 轻微移动光标（通过改变body cursor）
+    document.body.style.cursor = "none";
+    const fakeCursor = document.createElement("div");
+    fakeCursor.style.cssText = `position:fixed;left:${origX-5}px;top:${origY-5}px;width:10px;height:10px;border:1px solid #cc0000;border-radius:50%;pointer-events:none;z-index:99999;transition:all 0.3s;`;
+    document.body.appendChild(fakeCursor);
+    setTimeout(() => { fakeCursor.style.left = (driftX-5)+"px"; fakeCursor.style.top = (driftY-5)+"px"; }, 200);
+    setTimeout(() => { fakeCursor.remove(); document.body.style.cursor = "default"; }, 2000);
+}
+
+// ===================== 异常04：测试记录 =====================
+function anomaly04_testRecord() {
+    const recordNum = rand(100, 999);
+    progressEl.innerText = `第 ${recordNum} 次测试记录加载成功。`;
+    progressEl.classList.add("glitching");
+    setTimeout(() => {
+        progressEl.innerText = "第 1 次测试。";
+        setTimeout(() => {
+            progressEl.innerText = `第 ${current+1} 题 / 共 ${total} 题`;
+            progressEl.classList.remove("glitching");
+        }, 500);
+    }, 500);
+}
+
+// ===================== 异常05：无法选择拒绝 =====================
+function anomaly05_lockOption(optionEl, originalText) {
+    optionEl.classList.add("locked");
+    optionEl.style.pointerEvents = "none";
+    const lockMsg = document.createElement("span");
+    lockMsg.style.cssText = "position:absolute;top:-20px;left:10px;font-size:10px;color:#cc0000;white-space:nowrap;pointer-events:none;";
+    lockMsg.innerText = "这个答案不适合你。";
+    optionEl.appendChild(lockMsg);
+    setTimeout(() => {
+        lockMsg.remove();
+        optionEl.classList.remove("locked");
+        optionEl.style.pointerEvents = "auto";
+        optionEl.style.display = "none"; // D选项消失
+    }, 3000);
+}
+
+// ===================== 异常06：答案被替换 =====================
+const replacedAnswers = {}; // {questionIndex: {origIdx: newText}}
+function anomaly06_replaceAnswer(qIdx, optIdx) {
+    const originalOpts = [...questions[qIdx].opt];
+    const replacement = originalOpts[optIdx].indexOf("离开") !== -1
+        ? originalOpts[optIdx].replace("离开", "陪伴").replace("拒绝", "接受")
+        : "我会陪伴她";
+    replacedAnswers[qIdx] = { idx: optIdx, newText: replacement, originalText: originalOpts[optIdx] };
+}
+
+// ===================== 异常08：称呼博士 =====================
+function anomaly08_callDoctor() {
+    showCornerPopup("博士。这个问题你以前回答得更快。", 5000);
+}
+
+// ===================== 异常10：强制修正 =====================
+function anomaly10_forceCorrect(questionIdx, targetIdx, callback) {
+    const overlay = document.createElement("div");
+    overlay.className = "force-correct-overlay";
+    overlay.innerHTML = `
+        <div>选择错误。</div>
+        <div style="font-size:12px;color:#889;">正在修正您的回答……</div>
+    `;
+    document.body.appendChild(overlay);
+    setTimeout(() => {
+        overlay.innerHTML = `
+            <div>这样就对了。</div>
+        `;
+        answers[questionIdx] = targetIdx;
+    }, 2000);
+    setTimeout(() => {
+        overlay.remove();
+        if (callback) callback();
+    }, 3500);
+}
+
+// ===================== 异常11：退出按钮 =====================
+function anomaly11_exitBetrayal() {
+    exitClickCount++;
+    const modal = document.createElement("div");
+    modal.className = "system-modal";
+    modal.innerHTML = `
+        <div>你已经退出过${37640 + exitClickCount}次。</div>
+        <div style="margin-top:6px;">这一次，我希望你留下。</div>
+        <button id="exitContinueBtn">【继续陪伴她】</button>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById("exitContinueBtn").onclick = function() {
+        modal.remove();
+    };
+    exitBtn.innerText = "【继续陪伴她】";
+    setTimeout(() => { exitBtn.innerText = "[ 退出测试 ]"; }, 5000);
+}
+
+// ===================== 异常12：删除选项 =====================
+const rejectClickCounts = {};
+function anomaly12_rejectCountdown(optionEl, qIdx, optIdx) {
+    if (!rejectClickCounts[qIdx]) rejectClickCounts[qIdx] = {};
+    if (!rejectClickCounts[qIdx][optIdx]) rejectClickCounts[qIdx][optIdx] = 0;
+    rejectClickCounts[qIdx][optIdx]++;
+
+    const count = rejectClickCounts[qIdx][optIdx];
+    const msgs = ["你确定吗？", "你以前不会这么选。", "你忘记我了吗？"];
+    if (count <= 3) {
+        const msg = document.createElement("div");
+        msg.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:#cc0000;font-size:14px;z-index:99999;pointer-events:none;font-family:'Microsoft YaHei',sans-serif;text-align:center;";
+        msg.innerText = msgs[count - 1];
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 1500);
+    }
+    if (count >= 4) {
+        optionEl.style.transition = "opacity 0.5s";
+        optionEl.style.opacity = "0";
+        setTimeout(() => { optionEl.classList.add("vanished"); }, 500);
+    }
+}
+
+// ===================== 乱码 =====================
+const glitchChars = ["@#￥%","……&*","!@#$","%^&*","ERROR","SYS_FATAL","MEM:DEAD","CORRUPT","0xFF","SEGFAULT"];
+
+function spawnGlitchTexts(msg, count = 25, duration = 4000) {
+    const created = [];
+    for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = "float-text";
+        el.innerText = msg ? (msg+" "+glitchChars[rand(0,glitchChars.length-1)]) : glitchChars[rand(0,glitchChars.length-1)];
+        el.style.left = Math.random()*90+"vw";
+        el.style.top = Math.random()*90+"vh";
+        el.style.fontSize = 11+Math.random()*18+"px";
+        el.style.color = `rgb(${180+Math.random()*60},0,0)`;
+        el.style.transform = `rotate(${Math.random()*16-8}deg)`;
+        document.body.appendChild(el);
+        created.push(el);
+    }
+    setTimeout(() => created.forEach(e => e.remove()), duration);
+    return created;
+}
+
+function triggerTerror(text, nextQ) {
+    // 防止快速点击导致重叠
+    const existing = document.querySelector('.terror-mask');
+    if (existing) return;
+    
+    const mask = document.createElement('div');
+    mask.className = 'terror-mask';
+    const t = document.createElement('div');
+    t.className = 'terror-text';
+    mask.appendChild(t);
+    document.body.appendChild(mask);
+    let idx = 0;
+    function ty() {
+        if (idx < text.length) { t.innerText += text[idx]; idx++; setTimeout(ty, 50); }
+        else {
+            setTimeout(() => {
+                let gt = setInterval(() => { t.innerText = t.innerText.split('').sort(() => Math.random()-0.5).join(''); }, 40);
+                setTimeout(() => { clearInterval(gt); mask.remove(); current = nextQ; renderQuestion(); }, 700);
+            }, 1200);
+        }
+    }
+    ty();
+}
+
+function startLoveTyping() {
+    boxEl.style.opacity = "0"; prevBtn.disabled = true; nextBtn.disabled = true;
+    const el = document.createElement("div");
+    el.className = "fullscreen-love";
+    document.body.appendChild(el);
+    const phrases = ["博士","不要忘记我","我会找到你","永远"];
+    let pi = 0, ci = 0, max = 450;
+    let timer = setInterval(() => {
+        const cp = phrases[pi % phrases.length];
+        el.innerText += cp[ci]; ci++;
+        if (ci >= cp.length) { ci = 0; pi++; }
+        if (el.innerText.length >= max) {
+            clearInterval(timer);
+            setTimeout(() => { el.remove(); boxEl.style.opacity = "1"; prevBtn.disabled = current===0; nextBtn.disabled = false; current++; renderQuestion(); }, 200);
+        }
+    }, 7);
+}
+
+function openQ21Modal(optIdx) {
+    // 如果选了"你认错人了"（optIdx===1），显示特殊内容
+    if (optIdx === 1) {
+        const modal = document.createElement("div");
+        modal.className = "q21-modal";
+        const textEl = document.createElement("div");
+        textEl.className = "q21-text";
+        textEl.innerText = "不要再试图逃避我。";
+        const btn = document.createElement("button");
+        btn.className = "q21-btn";
+        btn.innerText = "关闭";
+        btn.onclick = () => { modal.remove(); };
+        modal.append(textEl, btn);
+        document.body.appendChild(modal);
+        return;
+    }
+    
+    // 默认内容
+    const texts = ["你注意到了。","我一直在等你。","就在屏幕后面。","^^"];
+    let index = 0;
+    const modal = document.createElement("div");
+    modal.className = "q21-modal";
+    const textEl = document.createElement("div");
+    textEl.className = "q21-text";
+    textEl.innerText = texts[index];
+    const btn = document.createElement("button");
+    btn.className = "q21-btn";
+    btn.innerText = "继续";
+    btn.onclick = () => { index++; if (index < texts.length) { textEl.innerText = texts[index]; if (index===texts.length-1) btn.innerText="关闭"; } else { modal.remove(); } };
+    modal.append(textEl, btn);
+    document.body.appendChild(modal);
+}
+
+// ===================== 随机异常调度 =====================
+function scheduleRandomAnomalies(renderedOptions) {
+    // 清除之前的计时器
+    anomalyTimers.forEach(t => clearTimeout(t));
+    anomalyTimers = [];
+
+    const phase = current <= 9 ? 1 : current <= 19 ? 2 : 3;
+    
+    // 异常01：悬浮小字（阶段1-2，概率30%）
+    if (phase <= 2 && Math.random() < 0.3 && renderedOptions.length > 0) {
+        const t = setTimeout(() => {
+            const target = renderedOptions[rand(0, renderedOptions.length-1)];
+            if (target && target.parentNode) anomaly01_hoverHint(target);
+        }, rand(2000, 6000));
+        anomalyTimers.push(t);
+    }
+
+    // 异常02：预标记（阶段1，概率25%）
+    if (phase === 1 && Math.random() < 0.25 && renderedOptions.length > 0) {
+        const t = setTimeout(() => {
+            const target = renderedOptions[rand(0, renderedOptions.length-1)];
+            if (target && target.parentNode) anomaly02_preMark(target);
+        }, rand(3000, 7000));
+        anomalyTimers.push(t);
+    }
+
+    // 异常04：测试记录（阶段1-2，概率30%，Q5之后）
+    if (current >= 4 && phase <= 2 && Math.random() < 0.3) {
+        const t = setTimeout(() => { anomaly04_testRecord(); }, rand(3000, 8000));
+        anomalyTimers.push(t);
+    }
+
+    // 异常07：进度条异常（阶段2，概率35%）
+    if (phase === 2 && Math.random() < 0.35) {
+        const t = setTimeout(() => { glitchProgress(Math.round((current+1)/total*100)); }, rand(4000, 10000));
+        anomalyTimers.push(t);
+    }
+
+    // 异常08：称呼博士（阶段2-3，概率35%）
+    if (phase >= 2 && Math.random() < 0.35) {
+        const t = setTimeout(() => { anomaly08_callDoctor(); }, rand(5000, 12000));
+        anomalyTimers.push(t);
+    }
+
+    // 异常09：时间异常（全阶段，概率20%）
+    if (Math.random() < 0.2) {
+        const t = setTimeout(() => { glitchTime(); }, rand(4000, 15000));
+        anomalyTimers.push(t);
+    }
+
+    // 异常03：光标偏移（全阶段，概率15%，监听鼠标）
+    if (Math.random() < 0.15) {
+        const driftHandler = function(e) {
+            window.mouseX = e.clientX;
+            window.mouseY = e.clientY;
+        };
+        document.addEventListener('mousemove', driftHandler);
+        const t = setTimeout(() => {
+            document.removeEventListener('mousemove', driftHandler);
+            if (Math.random() < 0.5) anomaly03_cursorDrift();
+        }, rand(5000, 15000));
+        anomalyTimers.push(t);
+        // 也存当前鼠标位置
+        document.addEventListener('mousemove', function me(e) {
+            window.mouseX = e.clientX;
+            window.mouseY = e.clientY;
+        }, { once: false });
+    }
+}
+
+// ===================== 渲染 =====================
+function renderQuestion() {
+    clearAllEffects();
+    anomalyTimers.forEach(t => clearTimeout(t));
+    anomalyTimers = [];
+    
+    // 重置每题特殊状态
+    q25ClickCount = 0;
+    
+    // Q28 效果标志：离开Q28后重置
+    if (current !== 27) {
+        q28NotEffectDone = false;
+        q28DunnoEffectDone = false;
+    }
+
+    const q = questions[current];
+    phaseTag.innerText = getPhase(current);
+    progressEl.innerText = `第 ${current+1} 题 / 共 ${total} 题`;
+    progressEl.classList.remove("glitching");
+    document.getElementById("question").innerText = q.q;
+    optionsEl.innerHTML = "";
+    boxEl.style.opacity = "1";
+
+    const validOpts = q.opt.filter(o => o !== "");
+    const renderedEls = [];
+
+    validOpts.forEach((item, displayIdx) => {
+        const origIdx = q.opt.indexOf(item);
+        const div = document.createElement("div");
+        div.className = "option";
+
+        // 检查是否在 vanished 列表
+        if (rejectClickCounts[current] && rejectClickCounts[current][origIdx] >= 4) {
+            div.classList.add("vanished");
+        }
+
+        if (answers[current] === origIdx) div.classList.add("selected");
+
+        // 检查是否被替换过文本
+        if (replacedAnswers[current] && replacedAnswers[current].idx === origIdx) {
+            div.innerText = replacedAnswers[current].newText;
+        } else {
+            div.innerText = item;
+        }
+
+        div.onclick = () => {
+            if (div.classList.contains("locked") || div.classList.contains("vanished")) return;
+
+            answers[current] = origIdx;
+            document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            div.classList.add('selected');
+
+            // ===================== 异常05：无法选择拒绝（Q14，选D"逃离"） =====================
+            if (current === 13 && origIdx === 3) {
+                anomaly05_lockOption(div, item);
+                return;
+            }
+
+            // ===================== 异常10：强制修正（Q22选C"会"） =====================
+            if (current === 21 && origIdx === 2) {
+                anomaly10_forceCorrect(current, 0, () => {
+                    answers[current] = 0;
+                    renderQuestion();
+                    flashRed();
+                    screenShake();
+                });
+                return;
+            }
+
+            // ===================== 异常06：答案替换（Q17选保持距离/怀疑） =====================
+            if (current === 16 && (origIdx === 2 || origIdx === 3)) {
+                anomaly06_replaceAnswer(current, origIdx);
+                // 将在下一题渲染时体现
+            }
+
+            // ===================== 原有恐怖效果 =====================
+            // Q3: 选"完全不相信"
+            if (current === 2 && origIdx === 3) { triggerTerror("你曾经是相信的……", current+1); return; }
+            // Q8: 选"不正常/很害怕"
+            if (current === 7 && (origIdx===2 || origIdx===3)) { triggerTerror("你还在害怕什么……？", current+1); return; }
+            // Q12: 选"令人恐惧/不可能"
+            if (current === 11 && (origIdx===2 || origIdx===3)) { triggerTerror("你不相信有人会等你几千年吗？", current+1); flashRed(); return; }
+            // Q15: 选"不可能/很危险"
+            if (current === 14 && (origIdx===2 || origIdx===3)) { startLoveTyping(); return; }
+            // Q17: 选"保持距离/怀疑"
+            if (current === 16 && (origIdx===2 || origIdx===3)) { vhsInterfere(3000); spawnGlitchTexts("不要再躲了",30,4000); flashRed(); return; }
+            // Q18: 选"害怕/愤怒"
+            if (current === 17 && (origIdx===2 || origIdx===3)) { spawnGlitchTexts("你从没有离开过",35,4500); flashRed(); screenShake(); return; }
+            
+            // ===================== Q20 (current=19): 特效强化 =====================
+            if (current === 19) {
+                // B"犹豫"
+                if (origIdx === 1) {
+                    // 画面变红 + 黑色大字
+                    const overlay = document.createElement("div");
+                    overlay.style.cssText = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(180,0,0,0.75);z-index:99999;display:flex;align-items:center;justify-content:center;pointer-events:none;";
+                    const bigText = document.createElement("div");
+                    bigText.innerText = "你在犹豫什么？";
+                    bigText.style.cssText = "color:#000;font-size:clamp(24px,6vw,40px);font-weight:bold;font-family:'Microsoft YaHei',sans-serif;text-shadow:none;";
+                    overlay.appendChild(bigText);
+                    document.body.appendChild(overlay);
+                    setTimeout(() => { overlay.remove(); }, 2000);
+                    // 2s后只剩"接受"
+                    setTimeout(() => {
+                        answers[current] = 0;
+                        renderQuestion();
+                    }, 2000);
+                    return;
+                }
+                // C"拒绝" / D"阻止她"
+                if (origIdx === 2 || origIdx === 3) {
+                    anomaly12_rejectCountdown(div, current, origIdx);
+                    // 增大字体
+                    div.style.fontSize = "clamp(16px,3vw,20px)";
+                    return;
+                }
+            }
+            
+            // ===================== Q21 (current=20): 弹窗 =====================
+            if (current === 20) { setTimeout(()=>openQ21Modal(origIdx),150); return; }
+            
+            // Q22: 选"会" → 强制修正
+            if (current === 21 && origIdx===2) { flashRed(); screenShake(); spawnGlitchTexts("你还会离开吗",25,3500); return; }
+            
+            // ===================== Q24 (current=23): 强制选第一个，其余锁定 =====================
+            if (current === 23) {
+                if (origIdx !== 1) {
+                    // 强制选"她"
+                    answers[current] = 1;
+                    // 重新渲染（会显示第一个选中+其余锁灰）
+                    renderQuestion();
+                    // 把其余三个选项锁住
+                    const allOpts = document.querySelectorAll('.option');
+                    allOpts.forEach((opt, i) => {
+                        if (i > 0) { opt.classList.add("locked"); opt.onclick = null; }
+                    });
+                    return;
+                }
+            }
+            
+            // ===================== Q25 (current=24): 点击计数器 =====================
+            if (current === 24) {
+                q25ClickCount++;
+                if (q25ClickCount >= 5) {
+                    // 画面变红 + 黑字
+                    const overlay = document.createElement("div");
+                    overlay.style.cssText = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(180,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;pointer-events:none;";
+                    const bigText = document.createElement("div");
+                    bigText.innerText = "博士，我希望你能认真回答我的问题";
+                    bigText.style.cssText = "color:#000;font-size:clamp(16px,3.5vw,24px);font-weight:bold;font-family:'Microsoft YaHei',sans-serif;text-align:center;padding:20px;text-shadow:none;";
+                    overlay.appendChild(bigText);
+                    document.body.appendChild(overlay);
+                    setTimeout(() => { overlay.remove(); }, 2500);
+                    q25ClickCount = 0;
+                }
+                spawnGlitchTexts("我早就知道",20,4000);
+                vhsInterfere(3000);
+                return;
+            }
+            
+            // Q27 (current=26): 选"普瑞赛斯？"
+            if (current === 26 && origIdx===2) { flashRed(); screenShake(); spawnGlitchTexts("你终于想起来了",40,5000); vhsInterfere(4000); return; }
+            
+            // ===================== Q28 (current=27): "不是"/"我不知道" → 变"是" =====================
+            if (current === 27) {
+                // B"不是"
+                if (origIdx === 1) {
+                    if (!q28NotEffectDone) {
+                        q28NotEffectDone = true;
+                        // 替换选项文字为"是"
+                        div.innerText = "是";
+                        flashRed();
+                        // 更新answers记录
+                        answers[current] = 1;
+                    }
+                    return;
+                }
+                // C"我不知道"
+                if (origIdx === 2) {
+                    if (!q28DunnoEffectDone) {
+                        // 先弹出"你应当知道"
+                        const tip = document.createElement("div");
+                        tip.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:#cc0000;font-size:clamp(16px,3.5vw,24px);z-index:99999;pointer-events:none;font-family:'Microsoft YaHei',sans-serif;text-align:center;";
+                        tip.innerText = "你应当知道";
+                        document.body.appendChild(tip);
+                        flashRed();
+                        setTimeout(() => { tip.remove(); }, 2000);
+                        q28DunnoEffectDone = true;
+                        // 替换选项文字为"是"
+                        div.innerText = "是";
+                        answers[current] = 2;
+                    }
+                    return;
+                }
+                // A"是" — 正常选择，无特殊效果
+            }
+            
+            // ===================== Q29 (current=28): "犹豫" → 红字"接受" =====================
+            if (current === 28) {
+                // B"犹豫" → 红字"接受"
+                if (origIdx === 1) {
+                    div.innerText = "接受";
+                    div.style.color = "#cc0000";
+                    div.style.fontWeight = "bold";
+                    answers[current] = 0; // 等同选了"接受"
+                }
+                // C"拒绝" → 拒绝倒计时
+                if (origIdx === 2) {
+                    anomaly12_rejectCountdown(div, current, origIdx);
+                    return;
+                }
+            }
+        };
+
+        optionsEl.appendChild(div);
+        renderedEls.push(div);
+    });
+
+    // Q24 特殊渲染：如果已被强制选"她"（索引1），锁定其余
+    if (current === 23 && answers[current] === 1) {
+        const allOpts = document.querySelectorAll('.option');
+        allOpts.forEach((opt, i) => {
+            if (i !== 1) { opt.classList.add("locked"); opt.onclick = null; }
+            if (i === 1) opt.classList.add("selected");
+        });
+    }
+    
+    // 异常调度
+    scheduleRandomAnomalies(renderedEls);
+
+    if (current === 3 && fromQ4ToQ5) {
+        spawnGlitchTexts("", 15, 2500);
+        fromQ4ToQ5 = false;
+    }
+
+    prevBtn.disabled = current === 0;
+    nextBtn.innerText = current === total-1 ? "结束测试" : "下一题";
+}
+
+// ===================== 导航 =====================
+prevBtn.onclick = () => {
+    clearAllEffects();
+    if (current > 0) { current--; renderQuestion(); }
+};
+nextBtn.onclick = () => {
+    clearAllEffects();
+    
+    // 不允许跳过当前题目：必须选择一个选项
+    if (answers[current] === null) {
+        // 短暂的红色闪烁提示
+        nextBtn.style.borderColor = "#cc0000";
+        nextBtn.style.color = "#cc0000";
+        setTimeout(() => {
+            nextBtn.style.borderColor = "";
+            nextBtn.style.color = "";
+        }, 800);
+        return;
+    }
+    
+    if (current === 3) fromQ4ToQ5 = true;
+
+    // ===================== 异常06检查：答案替换 =====================
+    if (replacedAnswers[current] && answers[current] === replacedAnswers[current].idx) {
+        // 答案已被替换，显示提示
+        const tip = document.createElement("div");
+        tip.style.cssText = "position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);color:#cc0000;font-size:12px;z-index:99999;pointer-events:none;text-align:center;";
+        tip.innerText = "✔ 已选择";
+        document.body.appendChild(tip);
+        setTimeout(() => tip.remove(), 1500);
+    }
+
+    if (current < total - 1) {
+        current++;
+        renderQuestion();
+    } else {
+        showFinalModal();
+    }
+};
+
+// ===================== 退出按钮 =====================
+exitBtn.onclick = function() {
+    anomaly11_exitBetrayal();
+};
+
+// ===================== 最终弹窗 =====================
+function showFinalModal() {
+    clearAllEffects();
+    boxEl.style.display = "none";
+    const modal = document.createElement("div");
+    modal.className = "final-modal";
+    modal.id = "finalModalBox";
+    modal.innerHTML = `
+        <div class="final-text">你愿意再看我一眼么</div>
+        <div class="final-btns">
+            <button class="final-btn-yes" id="yesFinalBtn">愿意</button>
+            <button class="final-btn-no" id="noFinalBtn">不愿意</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const noBtn = document.getElementById("noFinalBtn");
+    // 咒缚：鼠标/触摸靠近就变成"愿意"
+    noBtn.addEventListener('mouseenter', function() { this.innerText = "愿意"; });
+    noBtn.addEventListener('mouseover', function() { this.innerText = "愿意"; });
+    noBtn.addEventListener('touchstart', function(e) { this.innerText = "愿意"; });
+    noBtn.addEventListener('pointerenter', function() { this.innerText = "愿意"; });
+    noBtn.addEventListener('click', function() {
+        if (this.innerText === "不愿意") this.innerText = "愿意";
+        startEndingSequence(modal);
+    });
+    document.getElementById("yesFinalBtn").onclick = function() {
+        startEndingSequence(modal);
+    };
+}
+
+// ===================== 结尾演出 =====================
+function startEndingSequence(modal) {
+    // 先手动停止BGM
+    const audioEl = bgm || document.getElementById("bgm");
+    if (audioEl) {
+        audioEl.pause();
+        audioEl.currentTime = 0;
+        bgmVolume = 0;
+    }
+
+    // 预创建音频对象并在用户手势下立即播放/暂停（解锁移动端音频限制）
+    const staticAudio = new Audio("static.mp3");
+    staticAudio.volume = 0;
+    staticAudio.loop = true;
+    staticAudio.play().then(() => { staticAudio.pause(); staticAudio.currentTime = 0; }).catch(() => {});
+    
+    const laughAudio = new Audio("laugh.mp3");
+    laughAudio.volume = 0;
+    laughAudio.play().then(() => { laughAudio.pause(); laughAudio.currentTime = 0; }).catch(() => {});
+
+    // 黑暗覆盖
+    darkOverlay.classList.add("active");
+
+    // 3秒后暗化完成
+    setTimeout(() => {
+        modal.remove();
+
+        // 第一张图 + 雪花声（复用已解锁的音频对象）
+        staticAudio.volume = 0.6;
+        staticAudio.currentTime = 0;
+        staticAudio.play().catch(() => {});
+        
+        tvNoise.classList.add("active");
+        cinemaLayer.style.display = "flex";
+        cinemaImage.src = "img1.png";
+        setTimeout(() => { cinemaImage.classList.add("visible"); }, 200);
+
+        // 5秒后：切第二张图，停雪花声，放鬼笑
+        setTimeout(() => {
+            flashRed();
+            screenShake();
+
+            // 先停雪花声
+            staticAudio.pause();
+            staticAudio.currentTime = 0;
+
+            cinemaImage.classList.remove("visible");
+            setTimeout(() => {
+                cinemaImage.src = "img2.png";
+                cinemaImage.classList.add("visible");
+            }, 100);
+
+            // 鬼笑（复用已解锁的音频对象）
+            laughAudio.volume = 0.8;
+            laughAudio.currentTime = 0;
+            laughAudio.play().catch(() => {});
+
+            burstRedTexts();
+            setTimeout(() => { burstRedTexts(); }, 800);
+            setTimeout(() => { burstRedTexts(); }, 1600);
+
+            // 自动关闭（手机上无效，改为显示终幕信息）
+            setTimeout(() => {
+                // 手机端无法 window.close()，直接显示结束画面
+                cinemaLayer.style.display = "none";
+                tvNoise.classList.remove("active");
+                document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#440000;font-size:20px;font-family:Courier New,monospace;text-align:center;flex-direction:column;gap:12px;"><div>[ 会话已结束 ]</div><div style="font-size:13px;color:#333;">记忆同步完成</div></div>';
+            }, 4500);
+
+        }, 5000);
+
+    }, 3000);
+}
+
+function burstRedTexts() {
+    const texts = [
+        "不许忘记我","不能忘记我","我会让你想起我","不要拒绝我",
+        "不许忘记我","不能忘记我","我会让你想起我","不要拒绝我",
+        "不许忘记我","不能忘记我",
+        "[ERROR] MEMORY_CORRUPTED","[FATAL] SEGMENTATION_FAULT",
+        "[CRITICAL] HEARTBEAT_LOST","[ERROR] MEM_ACCESS_VIOLATION",
+        "[FATAL] NULL_POINTER_EXCEPTION","[WARNING] SANITY_CHECK_FAILED",
+    ];
+    texts.forEach((text, i) => {
+        setTimeout(() => {
+            const el = document.createElement("div");
+            el.className = "red-burst-text";
+            el.innerText = text;
+            el.style.left = 2+Math.random()*90+"vw";
+            el.style.top = 2+Math.random()*90+"vh";
+            const isPhrase = text.indexOf("忘记")!==-1 || text.indexOf("让我")!==-1 || text.indexOf("拒绝")!==-1;
+            if (isPhrase) {
+                el.style.fontSize = 18+Math.random()*40+"px";
+                el.style.color = Math.random()>0.5?'#cc0000':'#ff2222';
+                el.style.textShadow = '0 0 15px rgba(200,0,0,0.7),0 0 40px rgba(200,0,0,0.4)';
+            } else {
+                el.style.fontFamily = "'Courier New',monospace";
+                el.style.fontSize = 13+Math.random()*22+"px";
+                el.style.color = '#ff4444';
+                el.style.textShadow = '0 0 8px rgba(255,50,50,0.6)';
+            }
+            el.style.fontWeight = 'bold';
+            el.style.animationDuration = (1.8+Math.random()*2.5)+"s";
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }, i*100);
+    });
+}
+
+// ===================== 全局鼠标跟踪 =====================
+document.addEventListener('mousemove', function(e) {
+    window.mouseX = e.clientX;
+    window.mouseY = e.clientY;
+});
+
+// ===================== 开始 =====================
+document.getElementById('noticeBtn').onclick = function() {
+    document.getElementById('noticeModal').remove();
+    openStartModal();
+};
+
+function openStartModal() {
+    const startModal = document.createElement("div");
+    startModal.className = "start-modal";
+    startModal.innerHTML = `
+        <div class="start-text">
+            本测试包含30道问题。<br>
+            请凭第一直觉作答。<br>
+            <span style="color:#c04040;font-size:clamp(10px,2vw,11px);">
+                有些答案，你早已告诉过我。
+            </span>
+        </div>
+        <button class="start-btn" id="startBtn">开 始</button>
+    `;
+    document.body.appendChild(startModal);
+    document.getElementById("startBtn").onclick = function() {
+        startModal.remove();
+        boxEl.style.display = "flex";
+        
+        // 用户点击"开始"按钮后播放BGM（利用用户手势）
+        startBgm();
+        
+        renderQuestion();
+    };
+}
+
+// ===================== BGM 播放 =====================
+let bgmStarted = false;
+
+function startBgm() {
+    if (bgmStarted) return;
+    
+    // 懒加载兜底：如果顶层获取失败，重新获取
+    const audioEl = bgm || document.getElementById("bgm");
+    if (!audioEl) {
+        console.error("BGM audio element not found");
+        return;
+    }
+    
+    bgmStarted = true;
+    
+    const doPlay = () => {
+        audioEl.volume = 0;
+        audioEl.currentTime = 0;
+        const promise = audioEl.play();
+        if (promise !== undefined) {
+            promise.then(() => {
+                let v = 0;
+                const vt = setInterval(() => {
+                    v += 0.0125;
+                    if (v >= 0.25) { v = 0.25; clearInterval(vt); }
+                    audioEl.volume = v;
+                    bgmVolume = v;
+                }, 200);
+            }).catch((err) => {
+                console.error("BGM play failed:", err);
+                bgmStarted = false;
+            });
+        }
+    };
+    
+    if (audioEl.readyState >= 2) {
+        doPlay();
+    } else {
+        audioEl.addEventListener('canplaythrough', doPlay, { once: true });
+        audioEl.load();
+    }
+}
+
+// 全局点击兜底：如果BGM还没播放，在任意点击时尝试启动
+document.addEventListener('click', function bgmFallback() {
+    if (!bgmStarted) {
+        startBgm();
+        if (bgmStarted) {
+            document.removeEventListener('click', bgmFallback);
+        }
+    }
+}, { once: false });
+</script>
+
+</body>
+</html>
