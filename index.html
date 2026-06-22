@@ -446,6 +446,7 @@ let anomalyTimers = [];          // 异常事件的计时器
 let q25ClickCount = 0;           // Q25点击计数器
 let q28NotEffectDone = false;    // Q28"不是"效果已触发过
 let q28DunnoEffectDone = false;  // Q28"我不知道"效果已触发过
+let endingTriggered = false;      // 结尾演出已触发，防重复播放
 
 // ===================== DOM =====================
 const boxEl = document.getElementById("mainBox");
@@ -982,7 +983,7 @@ function renderQuestion() {
                     // 把其余三个选项锁住
                     const allOpts = document.querySelectorAll('.option');
                     allOpts.forEach((opt, i) => {
-                        if (i > 0) { opt.classList.add("locked"); opt.onclick = null; }
+                        if (i !== 1) { opt.classList.add("locked"); opt.onclick = null; }
                     });
                     return;
                 }
@@ -1165,6 +1166,11 @@ function showFinalModal() {
 
 // ===================== 结尾演出 =====================
 function startEndingSequence(modal) {
+    function startEndingSequence(modal) {
+    // 防止重复触发（手机端可能多次点击/事件叠加）
+    if (endingTriggered) return;
+    endingTriggered = true;
+    
     // 先手动停止BGM
     const audioEl = bgm || document.getElementById("bgm");
     if (audioEl) {
