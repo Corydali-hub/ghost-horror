@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>记忆深处的你 · 心理测试</title>
+    <link rel="preload" as="image" href="img1.webp">
+    <link rel="preload" as="image" href="img2.webp">
+    <link rel="preload" as="audio" href="static.mp3">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; }
 
@@ -437,8 +440,8 @@
     
     const assets = [
         { url: "bgm.mp3", type: "blob" },
-        { url: "img1.png", type: "blob" },
-        { url: "img2.png", type: "blob" }
+        { url: "img1.webp", type: "blob" },
+        { url: "img2.webp", type: "blob" }
     ];
     let loaded = 0;
     const total = assets.length;
@@ -1316,7 +1319,7 @@ function startEndingSequence(modal) {
         
         tvNoise.classList.add("active");
         cinemaLayer.style.display = "flex";
-        cinemaImage.src = "img1.png";
+        cinemaImage.src = "img1.webp";
         setTimeout(() => { cinemaImage.classList.add("visible"); }, 200);
 
         // 5秒后：切第二张图，停雪花声，放鬼笑
@@ -1330,7 +1333,7 @@ function startEndingSequence(modal) {
 
             cinemaImage.classList.remove("visible");
             setTimeout(() => {
-                cinemaImage.src = "img2.png";
+                cinemaImage.src = "img2.webp";
                 cinemaImage.classList.add("visible");
             }, 100);
 
