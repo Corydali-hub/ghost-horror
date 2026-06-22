@@ -1428,21 +1428,19 @@ function startBgm() {
     const doPlay = () => {
         audioEl.volume = 0;
         audioEl.currentTime = 0;
-        const promise = audioEl.play();
-        if (promise !== undefined) {
-            promise.then(() => {
-                let v = 0;
-                const vt = setInterval(() => {
-                    v += 0.0125;
-                    if (v >= 0.25) { v = 0.25; clearInterval(vt); }
-                    audioEl.volume = v;
-                    bgmVolume = v;
-                }, 200);
-            }).catch((err) => {
-                console.error("BGM play failed:", err);
-                bgmStarted = false;
-            });
-        }
+        audioEl.muted = true;
+        audioEl.play().then(() => {
+            audioEl.muted = false;
+            let v = 0;
+            const vt = setInterval(() => {
+                v += 0.0125;
+                if (v >= 0.25) { v = 0.25; clearInterval(vt); }
+                audioEl.volume = v;
+                bgmVolume = v;
+            }, 200);
+        }).catch(() => {
+            bgmStarted = false;
+        });
     };
     
     if (audioEl.readyState >= 2) {
